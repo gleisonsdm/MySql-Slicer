@@ -131,11 +131,11 @@ public void search(sql::Connection* con) {
 	}
 }
 
-public void process(sql::Connection* con, string database) {
-  queries = set<sql::ResultSet*>();
+public void process(sql::Connection* srcCon, string srcDatabase, sql::Connection* dstCon, string dstDatabase) {
+	queries = set<sql::ResultSet*>();
 
-	buildDependencyGraph(con, database); 
-	search(con);
+	buildDependencyGraph(srcCon, srcDatabase); 
+	search(srcCon);
 
 }
 

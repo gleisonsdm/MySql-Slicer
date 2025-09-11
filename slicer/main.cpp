@@ -16,20 +16,73 @@
 
 using namespace std;
 
-string database;
+string srcDB;
+string srcHost;
+string srcUsr;
+string srcPwd;
+string srcPort;
+string dstDB;
+string dstHost;
+string dstUsr;
+string dstPwd;
+string dstPort;
 
 int main(int argc, char *argv[])
 {
-	if (argc % 2 != 1) {
+	if (argc != 21) {
 		cerr << "Invalid number of parameters!!!";
 		return 1;
 	}
 
 	for (int pid = 1; pid < argc; pid+=2) {
-		if (argv[pid] == "-D" || argv[pid] == "--database") {
-			database = argv[(pid + 1)];
+		if (argv[pid] == "-SD" || argv[pid] == "--source-database") {
+			srcDB = argv[(pid + 1)];
+		}
+		if (argv[pid] == "-SH" || argv[pid] == "--source-host") {
+			srcHost = argv[(pid + 1)];
+		}
+		if (argv[pid] == "-SU" || argv[pid] == "--source-user") {
+			srcUsr = argv[(pid + 1)];
+		}
+		if (argv[pid] == "-SW" || argv[pid] == "--source-password") {
+			srcPwd = argv[(pid + 1)];
+		}
+		if (argv[pid] == "-SP" || argv[pid] == "--source-port") {
+			srcPort = argv[(pid + 1)];
+		}
+		if (argv[pid] == "-DD" || argv[pid] == "--destiny-database") {
+			dstDB = argv[(pid + 1)];
+		}
+		if (argv[pid] == "-DH" || argv[pid] == "--destiny-host") {
+			dstHost = argv[(pid + 1)];
+		}
+		if (argv[pid] == "-DU" || argv[pid] == "--destiny-user") {
+			dstUsr = argv[(pid + 1)];
+		}
+		if (argv[pid] == "-DW" || argv[pid] == "--destiny-password") {
+			dstPwd = argv[(pid + 1)];
+		}
+		if (argv[pid] == "-DP" || argv[pid] == "--destiny-port") {
+			dstPort = argv[(pid + 1)];
 		}
 	}
 
+	sql::mysql::MySQL_Driver* srcDriver;
+	sql::Connection* srcCon;
+	sql::mysql::MySQL_Driver* srcDriver;
+	sql::Connection* srcCon;
+
+	srcDriver = sql::mysql::get_mysql_driver_instance();
+	srcCon = srcDriver->connect("tcp://" + srcHost + ":" + srcPort, srcUsr, srcPwd);
+	srcCon->setSchema(srcDB);
+		
+	dstDriver = sql::mysql::get_mysql_driver_instance();
+	dstCon = dstDriver->connect("tcp://" + dstHost + ":" + dstPort, dstUsr, dstPwd);
+	dstCon->setSchema(dstDB);
+	
+	
+
+	delete srcCon;
+	delete dstCon;
 	return 0;
 }

@@ -50,3 +50,6 @@ rsconnect/
 
 # Library repository
 mysql-connector-cpp/
+
+# Executable
+main.out
