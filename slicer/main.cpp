@@ -67,16 +67,16 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	sql::mysql::MySQL_Driver* srcDriver;
+	sql::Driver* srcDriver;
 	sql::Connection* srcCon;
-	sql::mysql::MySQL_Driver* srcDriver;
-	sql::Connection* srcCon;
+	sql::Driver* dstDriver;
+	sql::Connection* dstCon;
 
-	srcDriver = sql::mysql::get_mysql_driver_instance();
+	srcDriver = get_driver_instance();
 	srcCon = srcDriver->connect("tcp://" + srcHost + ":" + srcPort, srcUsr, srcPwd);
 	srcCon->setSchema(srcDB);
 		
-	dstDriver = sql::mysql::get_mysql_driver_instance();
+	dstDriver = get_driver_instance();
 	dstCon = dstDriver->connect("tcp://" + dstHost + ":" + dstPort, dstUsr, dstPwd);
 	dstCon->setSchema(dstDB);
 	
