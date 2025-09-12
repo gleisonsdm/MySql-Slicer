@@ -53,3 +53,4 @@ mysql-connector-cpp/
 
 # Executable
 main.out
+*.o

@@ -21,41 +21,44 @@
 #include <queue>
 #include <utility>
 #include <algorithm>
-#include <set> 
+#include <set>
+#include <cmath>
 
 #include "queries.hpp"
+#include "process.hpp"
 
 using namespace std;
 
-public void buildDependencyGraph(sql::Connection* con, string database, double percentage) {
+void Process::buildDependencyGraph(sql::Connection* con, string database, double percentage) {
 	// create one vector for each vertex
-	vector<string> tables =  selectDBTables(con, database);  
+	vector<string> tables = Queries::selectDBTables(con, database);  
 	for(int i = 0, ie = tables.size(); i < ie; i++) {
 		parentGraph[tables[i]] = vector<string>();
 		childGraph[tables[i]] = vector<string>();
-		nodesToCopy[tables[i]] = ceil(getNumberOfRows(con, tables[i]) * (percentage / 100.0));
+		nodesToCopy[tables[i]] = ceil(Queries::getNumberOfRows(con, tables[i]) * (percentage / 100.0));
 	} 
 
-	vector<string> views =  selectDBViews(con, database);  
+	vector<string> views = Queries::selectDBViews(con, database);  
 	for(int i = 0, ie = tables.size(); i < ie; i++) {
 		parentGraph[views[i]] = vector<string>();
 		childGraph[views[i]] = vector<string>();
-		nodesToCoy[views[i]] = 0;
+		nodesToCopy[views[i]] = 0;
 	} 
 
 	// Add edges 
-	vector<vector<string>> dependencies = selectFKconstraints(con, database);
+	vector<vector<string>> dependencies = Queries::selectFKconstraints(con, database);
 	for (int i = 0, ie = dependencies.size(); i < ie; i++) {
 		parentGraph[dependencies[i][3]].push_back(dependencies[i][1]);
 		childGraph[dependencies[i][1]].push_back(dependencies[i][3]); 
 	}
 }
 
-public vecto<string> transformResultSetIntoInserts(std::Connector* con, string selectQuery, string table) {
+vector<string>& Process::transformResultSetIntoInserts(sql::Connection* con, string selectQuery, string table) {
+	vector<string>* inserts = new vector<string>();
 	try {
-		stmt = con->createStatement();
-		res = stmt->executeQuery(selectQuery);
-		res_meta = res->getMetaData();
+		sql::Statement* stmt = con->createStatement();
+		sql::ResultSet* res = stmt->executeQuery(selectQuery);
+		sql::ResultSetMetaData* res_meta = res->getMetaData();
 
 		string datatype;  
 		int columncount = res_meta->getColumnCount();
@@ -75,13 +78,15 @@ public vecto<string> transformResultSetIntoInserts(std::Connector* con, string s
 			header += ")";
 			values += ")";
 			query += " " + header + " VALUES " + values + ";";
+			inserts->push_back(query);
 		}
 	} catch(sql::SQLException &e){
-		cerr << e->getMessange() << endl;
+		cerr << e.what() << endl;	
 	}
+	return *inserts;
 }
 
-public void markRowAsVisited(sql::Connection* conS, sql::Connection* conT, string table, string clause, long limit) {
+void Process::markRowAsVisited(sql::Connection* conS, sql::Connection* conT, string table, string clause, long limit) {
 	string sql = "SELECT * FROM  " + table + " ";
 	if (clause != "") {
 		sql += "WHERE " + clause + " ";
@@ -89,17 +94,17 @@ public void markRowAsVisited(sql::Connection* conS, sql::Connection* conT, strin
 	sql += "limit = " + to_string(limit) + ";";
 	sql::Statement* stmt = conS->createStatement();
 	sql::ResultSet* res = stmt->executeQuery(sql);
-	vector<string> result = new vector<string>();
 	while (res->next()) {
 		queries.insert(res);
 	}
+	// Finish
 }
 
-public void search(sql::Connection* con) {
+void Process::search(sql::Connection* conS, sql::Connection* conD) {
 	vector<pair<long, string>> nodesByDependencies;
 	map<string, int> visited;
 	for (auto I = parentGraph.begin(), IE = parentGraph.end(); I != IE; I++) {
-		visited[I-:first] = NOT_VISITED;
+		visited[I->first] = NOT_VISITED;
 	}
 
 	stack<string> nodesInVisit;
@@ -125,7 +130,7 @@ public void search(sql::Connection* con) {
 			toMarkAsVisited.push_back(table);
 
 			// Insert Rows
-			markRowAsVisited(con, table, "", nodesTiCopy[table]);
+			markRowAsVisited(conS, conD, table, "", nodesToCopy[table]);
 
 			if (visited[table] == VISITED) { 
 				continue;
@@ -140,7 +145,7 @@ public void search(sql::Connection* con) {
 				// Insert Rows
 
 				// Adicionar codigo para copiar dependencias
-				markRowAsVisited(con, table, "", nodesToCopy[table]);
+				markRowAsVisited(conS, conD, table, "", nodesToCopy[table]);
 				nodesInVisit.push(table);
 			}		
 		}
@@ -151,10 +156,12 @@ public void search(sql::Connection* con) {
 	}
 }
 
-public void process(sql::Connection* srcCon, string srcDatabase, sql::Connection* dstCon, string dstDatabase) {
+void Process::process(sql::Connection* srcCon, string srcDatabase, sql::Connection* dstCon, string dstDatabase, double percentage) {
 	queries = set<sql::ResultSet*>();
+	parentGraph = map<string, vector<string>>();
+	childGraph = map<string, vector<string>>();
+	nodesToCopy = map<string, long>();
 
-	buildDependencyGraph(srcCon, srcDatabase); 
-	search(srcCon);
-
+	buildDependencyGraph(srcCon, srcDatabase, percentage); 
+	search(srcCon, dstCon);
 }

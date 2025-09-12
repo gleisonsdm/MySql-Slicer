@@ -23,17 +23,17 @@ using namespace std;
 class Queries { 
 
 public: 
-	long getNumberOfRows(sql::Connection* con, string table);
+	static long getNumberOfRows(sql::Connection* con, string table);
 
-	string selectDBTables(string database);
+	static string selectDBTables(string database);
 
-	string selectDBViews(string database);
+	static string selectDBViews(string database);
 
-	string selectFKconstraints(string database);
+	static string selectFKconstraints(string database);
 
-	vector<string>& selectDBTables(sql::Connection* con, string database);
+	static vector<string>& selectDBTables(sql::Connection* con, string database);
 
-	vector<string>& selectDBViews(sql::Connection* con, string database);
+	static vector<string>& selectDBViews(sql::Connection* con, string database);
 
-	vector<vector<string>>& selectFKconstraints(sql::Connection* con, string database);
+	static vector<vector<string>>& selectFKconstraints(sql::Connection* con, string database);
 };

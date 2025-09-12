@@ -14,6 +14,8 @@
 #include <cppconn/resultset.h>
 #include <cppconn/statement.h>
 
+#include "process.hpp"
+
 using namespace std;
 
 string srcDB;
@@ -26,10 +28,11 @@ string dstHost;
 string dstUsr;
 string dstPwd;
 string dstPort;
+double percentage;
 
 int main(int argc, char *argv[])
 {
-	if (argc != 21) {
+	if (argc != 23) {
 		cerr << "Invalid number of parameters!!!";
 		return 1;
 	}
@@ -65,6 +68,10 @@ int main(int argc, char *argv[])
 		if (argv[pid] == "-DP" || argv[pid] == "--destiny-port") {
 			dstPort = argv[(pid + 1)];
 		}
+		if (argv[pid] == "-P" || argv[pid] == "--percentage") {
+			percentage = stod(argv[(pid + 1)]);
+		}
+
 	}
 
 	sql::Driver* srcDriver;
@@ -80,7 +87,8 @@ int main(int argc, char *argv[])
 	dstCon = dstDriver->connect("tcp://" + dstHost + ":" + dstPort, dstUsr, dstPwd);
 	dstCon->setSchema(dstDB);
 	
-	
+	Process pc;
+	pc.process(srcCon, srcDB, dstCon, dstDB, percentage);
 
 	delete srcCon;
 	delete dstCon;

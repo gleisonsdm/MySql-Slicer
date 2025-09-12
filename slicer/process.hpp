@@ -23,11 +23,9 @@
 #include <algorithm>
 #include <set> 
 
-#include "queries.cpp"
-
 using namespace std;
 
-public class Process {
+class Process {
 
 map<string, vector<string>> parentGraph;
 map<string, vector<string>> childGraph;
@@ -42,12 +40,12 @@ set <sql::ResultSet*> queries;
 public:
 	void buildDependencyGraph(sql::Connection* con, string database, double percentage);
 
-	vecto<string> transformResultSetIntoInserts(std::Connector* con, string selectQuery, string table);
+	vector<string>& transformResultSetIntoInserts(sql::Connection* con, string selectQuery, string table);
 
 	void markRowAsVisited(sql::Connection* conS, sql::Connection* conT, string table, string clause, long limit);
 
-	void search(sql::Connection* con);
+	void search(sql::Connection* conS, sql::Connection* conD);
 
-	void process(sql::Connection* srcCon, string srcDatabase, sql::Connection* dstCon, string dstDatabase);
+	void process(sql::Connection* srcCon, string srcDatabase, sql::Connection* dstCon, string dstDatabase, double percentage);
 
 };
