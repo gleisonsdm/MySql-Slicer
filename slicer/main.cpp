@@ -28,7 +28,7 @@ string dstHost;
 string dstUsr;
 string dstPwd;
 string dstPort;
-double percentage;
+nrows percentage;
 
 int main(int argc, char *argv[])
 {
@@ -37,6 +37,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
+	nrows = 0;
 	for (int pid = 1; pid < argc; pid+=2) {
 		if (argv[pid] == "-SD" || argv[pid] == "--source-database") {
 			srcDB = argv[(pid + 1)];
@@ -68,8 +69,8 @@ int main(int argc, char *argv[])
 		if (argv[pid] == "-DP" || argv[pid] == "--destiny-port") {
 			dstPort = argv[(pid + 1)];
 		}
-		if (argv[pid] == "-P" || argv[pid] == "--percentage") {
-			percentage = stod(argv[(pid + 1)]);
+		if (argv[pid] == "-N" || argv[pid] == "--number-of-rows") {
+			nrows = stoi(argv[(pid + 1)]);
 		}
 
 	}
@@ -88,7 +89,7 @@ int main(int argc, char *argv[])
 	dstCon->setSchema(dstDB);
 	
 	Process pc;
-	pc.process(srcCon, srcDB, dstCon, dstDB, percentage);
+	pc.process(srcCon, srcDB, dstCon, dstDB, nrows);
 
 	delete srcCon;
 	delete dstCon;

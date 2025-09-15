@@ -30,15 +30,18 @@ class Process {
 map<string, vector<string>> parentGraph;
 map<string, vector<string>> childGraph;
 map<string, long> nodesToCopy;
+map<string, long> nodesToSelect;
 
 set <sql::ResultSet*> queries;
+
+vector<vector<string>> constraints;
 
 #define NOT_VISITED 0
 #define IN_VISIT 1
 #define VISITED 2
 
 public:
-	void buildDependencyGraph(sql::Connection* con, string database, double percentage);
+	void buildDependencyGraph(sql::Connection* con, string database, int nRows);
 
 	vector<string>& transformResultSetIntoInserts(sql::Connection* con, string selectQuery, string table);
 
@@ -47,5 +50,7 @@ public:
 	void search(sql::Connection* conS, sql::Connection* conD);
 
 	void process(sql::Connection* srcCon, string srcDatabase, sql::Connection* dstCon, string dstDatabase, double percentage);
+
+	sql::ResultSet* selectWithClause(sql::Connection* con, string table, string clause, long limit);
 
 };

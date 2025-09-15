@@ -29,13 +29,14 @@
 
 using namespace std;
 
-void Process::buildDependencyGraph(sql::Connection* con, string database, double percentage) {
+void Process::buildDependencyGraph(sql::Connection* con, string database, int nRows) {
 	// create one vector for each vertex
 	vector<string> tables = Queries::selectDBTables(con, database);  
 	for(int i = 0, ie = tables.size(); i < ie; i++) {
 		parentGraph[tables[i]] = vector<string>();
 		childGraph[tables[i]] = vector<string>();
-		nodesToCopy[tables[i]] = ceil(Queries::getNumberOfRows(con, tables[i]) * (percentage / 100.0));
+		nodesToCopy[tables[i]] = Queries::getNumberOfRows(con, tables[i]) * nRows;
+		nodesToSelect[tables[i]] = Queries::getNumberOfRows(con, tables[i]) * nRows;
 	} 
 
 	vector<string> views = Queries::selectDBViews(con, database);  
@@ -43,6 +44,7 @@ void Process::buildDependencyGraph(sql::Connection* con, string database, double
 		parentGraph[views[i]] = vector<string>();
 		childGraph[views[i]] = vector<string>();
 		nodesToCopy[views[i]] = 0;
+		nodesToSelect[views[i]] = 0;
 	} 
 
 	// Add edges 
@@ -51,6 +53,9 @@ void Process::buildDependencyGraph(sql::Connection* con, string database, double
 		parentGraph[dependencies[i][3]].push_back(dependencies[i][1]);
 		childGraph[dependencies[i][1]].push_back(dependencies[i][3]); 
 	}
+
+	// Add constraints
+	constraint = selectFKconstraints(con, database);
 }
 
 vector<string>& Process::transformResultSetIntoInserts(sql::Connection* con, string selectQuery, string table) {
@@ -100,18 +105,30 @@ void Process::markRowAsVisited(sql::Connection* conS, sql::Connection* conT, str
 	// Finish
 }
 
+sql::ResultSet* Process::selectWithClause(sql::Connection* con, string table, string clause, long limit) {
+	string sql = "SELECT * FROM  " + table + " ";
+	if (clause != "") {
+		sql += "WHERE " + clause + " ";
+	}
+	sql += "limit = " + to_string(limit) + ";";
+	sql::Statement* stmt = con->createStatement();
+	sql::ResultSet* res = stmt->executeQuery(sql);
+	return res;
+}
+
 void Process::search(sql::Connection* conS, sql::Connection* conD) {
-	vector<pair<long, string>> nodesByDependencies;
 	map<string, int> visited;
 	for (auto I = parentGraph.begin(), IE = parentGraph.end(); I != IE; I++) {
 		visited[I->first] = NOT_VISITED;
 	}
 
-	stack<string> nodesInVisit;
+	stack<ResultSet*> nodesInVisit;
 	for (auto I = parentGraph.begin(), IE = parentGraph.end(); I != IE; I++) {
-		nodesByDependencies.push_back(make_pair(I->second.size(), I->first));
-
 		string table = I->first;
+		// Skip the nodes
+		if (nodesToCopy[table] =< 0) {
+			return;
+		}
 		if (visited[table] == VISITED) { 
 			continue;
 		} else if (visited[table] == IN_VISIT) {
@@ -121,7 +138,16 @@ void Process::search(sql::Connection* conS, sql::Connection* conD) {
 		} else { 
 			visited[table] = IN_VISIT;
 			nodesInVisit.push(table);
+			nodesToCopy[table] = nodesToCopy[table] - 1;
 		}
+
+		sql::ResultSet* nodes = selectWithClause(cinS, table, "", nodesToSelect[table]);
+		while (nodes && (queries.find(nodes) != queries.end()) && nodes->next());
+		if (nodes == null || (queries.find(nodes) != queries.end()) || !nodes->next()) {
+
+		}
+		markRowAsVisited(conS, conT, string table, string clause, long limit)
+
 
 		vector<string> toMarkAsVisited;
 		while (!nodesInVisit.empty()) {
@@ -161,6 +187,7 @@ void Process::process(sql::Connection* srcCon, string srcDatabase, sql::Connecti
 	parentGraph = map<string, vector<string>>();
 	childGraph = map<string, vector<string>>();
 	nodesToCopy = map<string, long>();
+	constraints = vector<vector<string>>();
 
 	buildDependencyGraph(srcCon, srcDatabase, percentage); 
 	search(srcCon, dstCon);

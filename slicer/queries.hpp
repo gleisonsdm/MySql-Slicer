@@ -36,4 +36,6 @@ public:
 	static vector<string>& selectDBViews(sql::Connection* con, string database);
 
 	static vector<vector<string>>& selectFKconstraints(sql::Connection* con, string database);
+
+	static sql::ResultSet* Process::markRowAsVisited(sql::Connection* con, string table, string clause, long limit);
 };
